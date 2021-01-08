@@ -2,12 +2,35 @@ from tkinter import *
 import os
 from datetime import *
 import time
-from dates import month, day, twentyEightDays, thirtyOneDays, thirtyDays
+from helpers.dates import *
+import mysql
+import mysql.connector
+
+# Database
+db = mysql.connector.connect(
+    host="localhost",
+    user='root',
+    passwd='Thepassword59..',
+    database="plannerapp"
+)
+
+
+mycursor = db.cursor()
+
 
 root = Tk()
 root.geometry("500x250")
 root.title("Task App")
 
+
+class showTask():
+
+    def __init__(self, master):
+        self.label = Label(master, text="Test")
+        self.label.grid(row=1, column=1)
+
+
+# todo Create frame for punchclock class
 class PunchClock():
 
     def __init__(self, master):
@@ -21,11 +44,14 @@ class PunchClock():
         self.second = time.strftime("%S")
         self.clock.config(text=self.hour + ":" + self.minute + ":" + self.second)
         self.clock.after(1000, self.clockEngine)
-#todo timer method for punchclock
+
+    # todo timer method for punchclock
     def timer(self):
         pass
 
 
+#todo create columns in database for task completeion date
+#todo fix date dropdown menus, make dates match month date
 class MainScreen():
 
     def __init__(self, master):
@@ -57,7 +83,7 @@ class MainScreen():
         self.confirmButton.grid(row=5, column=2, pady=10)
         self.shareButton = Button(self.sideBar, text="Share Task", padx=5)
         self.shareButton.grid(row=2, column=0)
-        self.viewTask = Button(self.sideBar, text="View Task", padx=7)
+        self.viewTask = Button(self.sideBar, text="View Task", padx=7, command=self.viewTask)
         self.viewTask.grid(row=1, column=0)
 
         #combobox
@@ -91,6 +117,7 @@ class MainScreen():
 
 
     def addTask(self):
+        #gets task info
         self.task = self.taskEntry.get()
         self.dateStart = datetime.now()
         self.deadlineMonth = self.monthVar.get()
@@ -98,6 +125,8 @@ class MainScreen():
         self.deadlineDay = self.dayVar.get()
         self.deadlineHour = self.hourVar.get()
         self.deadlineMinute = self.minuteVar.get()
+
+        #prints task info
         print(self.task)
         print(self.dateStart)
         print(self.deadlineMonth)
@@ -106,12 +135,16 @@ class MainScreen():
         print(self.deadlineHour)
         print(self.deadlineMinute)
 
+        #add task to database
+        mycursor.execute("INSERT INTO task(TaskName, created) VALUES(%s,%s)", (self.task, self.dateStart))
+        db.commit()
+
+        #clear task entry
         self.taskEntry.delete(0, END)
 
     def punchclockClicked(self):
         self.taskFrame.destroy()
         PunchClock(root)
-
 
     def settingsButton(self):
         print("Clicked")
@@ -120,27 +153,10 @@ class MainScreen():
         #fixme: if home button clicked more than once you cant change screens
         MainScreen(root)
 
-#todo: create punchclock function.
+    def viewTask(self):
+        self.taskFrame.destroy()
+        showTask(root)
 
-'''
-def clock():
-    hour = time.strftime("%H")
-    minute = time.strftime("%M")
-    second = time.strftime("%S")
-
-    my_label.config(text=hour + ":" + minute + ":" + second)
-    my_label.after(1000, clock)
-def update():
-    my_label.config(text=datetime.now())
-
-
-my_label = Label(root, text="")
-my_label.pack(pady=20)
-
-clock()
-
-#my_label.after(1000, update)
-'''
 
 if __name__ == "__main__":
     MainScreen(root)
