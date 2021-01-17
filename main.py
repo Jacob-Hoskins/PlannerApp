@@ -1,10 +1,9 @@
 from tkinter import *
-import os
 from datetime import *
-import time
 from helpers.dates import *
-import mysql
 import mysql.connector
+import time
+
 
 # Database
 db = mysql.connector.connect(
@@ -14,9 +13,7 @@ db = mysql.connector.connect(
     database="plannerapp"
 )
 
-
 mycursor = db.cursor()
-
 
 root = Tk()
 root.geometry("500x250")
@@ -29,38 +26,6 @@ class showTask():
         self.label = Label(master, text="Test")
         self.label.grid(row=1, column=1)
 
-
-# todo Create frame for punchclock class
-class PunchClock():
-
-    def __init__(self, master):
-# Home Button
-        self.side = LabelFrame(master)
-        self.side.grid(row=0, column=0)
-
-        self.homeButton = Button(self.side, text="-\n-\n-", command=self.home, padx=20, pady=-10)
-        self.homeButton.grid(row=0, column=0)
-
-        self.clock = Label(master, text="TIME", font=("Helvetica", 48), fg="green", bg="black")
-        self.clock.grid(row=0, column=1, padx=50)
-        self.clock.after(500, self.clockEngine)
-
-    def clockEngine(self):
-        self.hour = time.strftime("%H")
-        self.minute = time.strftime("%M")
-        self.second = time.strftime("%S")
-        self.clock.config(text=self.hour + ":" + self.minute + ":" + self.second)
-        self.clock.after(1000, self.clockEngine)
-
-    # todo timer method for punchclock
-    def timer(self):
-        pass
-
-
-    def home(self):
-        self.master.destroy()
-        self.side.destroy()
-        MainScreen(root)
 
 class ToDo():
     def __init__(self, master):
@@ -152,6 +117,88 @@ class ToDo():
         self.side.destroy()
         MainScreen(root)
 
+
+class PunchClock():
+
+    def __init__(self, master):
+        # truthy statement to figure out if user has started the punchclock and how to handle input
+        self.timerStart = False
+
+        # Frames
+        self.clockFrame = LabelFrame(master, pady=5)
+        self.clockFrame.grid(row=0, column=1, padx=10)
+        self.functionsFrame = LabelFrame(master)
+        self.functionsFrame.grid(row=1, column=1)
+
+        # Home Button
+        self.side = LabelFrame(master)
+        self.side.grid(row=0, column=0)
+
+        # clock widgets
+        self.homeButton = Button(self.side, text="-\n-\n-", command=self.home, padx=20, pady=-10)
+        self.homeButton.grid(row=0, column=0)
+
+        self.clock = Label(self.clockFrame, text="", font=("Helvetica", 48), fg="green", bg="black")
+        self.clock.grid(row=0, column=1, padx=50)
+        self.clock.after(500, self.clockEngine)
+
+        self.startButton = Button(self.functionsFrame, text="Start time", command=self.startTime)
+        self.startButton.grid(row=0, column=0)
+
+    def clockEngine(self):
+        self.hour = time.strftime("%H")
+        self.minute = time.strftime("%M")
+        self.second = time.strftime("%S")
+        self.time = (self.hour + ":" + self.minute + ":" + self.second)
+        self.clock.config(text=self.time)
+        self.clock.after(500, self.clockEngine)
+
+    # todo grab start time and upload to database
+    # todo once the timer is started Truthy to see if clocks running
+    def startTime(self):
+        self.timerStart = True
+
+        # check to see if timestart var is true to bring up stop and tag function
+        if self.timerStart == True:
+            print("You have started the time clock")
+            self.time = self.hour + ":" + self.minute
+            print(self.time)
+            self.startButton.destroy()
+
+            # grab start time and
+
+            # stop button to call new function to properly stop timer and add data to DB
+            self.stopButton = Button(self.functionsFrame,
+                                     text="Stop Timer",
+                                     command=self.stopTimer)
+            self.stopButton.grid(row=0, column=0)
+
+            # function that will bring up comment box to describe how time was spent and what got done
+            self.timerDetails()
+
+    # This function grabs data once the timer is started and uploads it to database
+    def timerDetails(self):
+        self.commentLabel = Label(self.functionsFrame, text="Description of time worked")
+        self.commentLabel.grid(row=1, column=0)
+        self.commentBox = Entry(self.functionsFrame)
+        self.commentBox.grid(row=2, column=0)
+
+    # this function will revert the clock back to its original state by changing the truthy statement to false and clearing screen
+    def stopTimer(self):
+        self.timerStart = False
+        print(self.timerStart)
+        # these destroy widgets that appear when timer is started, then return new widget that lets you restart timer
+        self.stopButton.destroy()
+        self.commentLabel.destroy()
+        self.commentBox.destroy()
+        self.newStartButton = Button(self.functionsFrame, text="Start Timer", command=self.startTime)
+        self.newStartButton.grid(row=0, column=0)
+
+    def home(self):
+        self.functionsFrame.destroy()
+        self.side.destroy()
+        self.clockFrame.destroy()
+        MainScreen(root)
 
 #todo create columns in database for task completeion date
 #todo fix date dropdown menus, make dates match month date
