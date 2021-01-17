@@ -23,9 +23,28 @@ root.title("Task App")
 class showTask():
 
     def __init__(self, master):
-        self.label = Label(master, text="Test")
-        self.label.grid(row=1, column=1)
+        #Frames
+        self.side = LabelFrame(master)
+        self.side.grid(row=0, column=0)
+        self.showTaskFrame = LabelFrame(master)
+        self.showTaskFrame.grid(row=0, column=1)
 
+        self.listbox = Listbox(self.showTaskFrame)
+        self.listbox.grid(row=0, column=0)
+
+        #Grab task from database
+        mycursor.execute("SELECT * FROM Task")
+        for x in mycursor:
+            self.listbox.insert(END, x)
+
+        #home button
+        self.homeButton = Button(self.side, text="-\n-\n-", command=self.home, padx=20, pady=-10)
+        self.homeButton.grid(row=0, column=0)
+
+    def home(self):
+        self.showTaskFrame.destroy()
+        self.side.destroy()
+        MainScreen(root)
 
 class ToDo():
     def __init__(self, master):
@@ -33,7 +52,7 @@ class ToDo():
         #Frames
         self.taskFrame = LabelFrame(master)
         self.taskFrame.grid(row=0, column=1, pady=5)
-#Home Button
+        #Home Button
         self.side = LabelFrame(master)
         self.side.grid(row=0, column=0)
 
@@ -82,6 +101,7 @@ class ToDo():
         self.minuteDrop = OptionMenu(self.taskFrame, self.minuteVar, *self.minute)
         self.minuteDrop.grid(row=3, column=4)
 
+    #Add task to database
     def addTask(self):
         # gets task info
         self.task = self.taskEntry.get()
@@ -103,8 +123,8 @@ class ToDo():
 
         # add task to database
         mycursor.execute("INSERT INTO task(TaskName, created, monthDeadline, dayDeadline,"
-                         " weekDayDeadline, hourDeadline, minuteDeadline,"
-                         "amPm) VALUES(%s,%s,%s,%s,%s,%s,%s)",
+                         "weekDayDeadline, hourDeadline, minuteDeadline) "
+                         "VALUES(%s,%s,%s,%s,%s,%s,%s)",
                          (self.task, self.dateStart, self.deadlineMonth, self.deadlineMonthDay,
                           self.deadlineDay, self.deadlineHour, self.deadlineMinute))
         db.commit()
@@ -116,7 +136,6 @@ class ToDo():
         self.taskFrame.destroy()
         self.side.destroy()
         MainScreen(root)
-
 
 class PunchClock():
 
@@ -153,8 +172,6 @@ class PunchClock():
         self.clock.config(text=self.time)
         self.clock.after(500, self.clockEngine)
 
-    # todo grab start time and upload to database
-    # todo once the timer is started Truthy to see if clocks running
     def startTime(self):
         self.timerStart = True
 
@@ -176,6 +193,8 @@ class PunchClock():
             # function that will bring up comment box to describe how time was spent and what got done
             self.timerDetails()
 
+        # return time so output database has start time to send in all data at once
+
     # This function grabs data once the timer is started and uploads it to database
     def timerDetails(self):
         self.commentLabel = Label(self.functionsFrame, text="Description of time worked")
@@ -183,16 +202,37 @@ class PunchClock():
         self.commentBox = Entry(self.functionsFrame)
         self.commentBox.grid(row=2, column=0)
 
+
     # this function will revert the clock back to its original state by changing the truthy statement to false and clearing screen
     def stopTimer(self):
         self.timerStart = False
         print(self.timerStart)
+
+        self.endTime = self.hour + ":" + self.minute
+
+        #grabs tag
+        self.timeTag = self.commentBox.get()
+
         # these destroy widgets that appear when timer is started, then return new widget that lets you restart timer
         self.stopButton.destroy()
         self.commentLabel.destroy()
         self.commentBox.destroy()
         self.newStartButton = Button(self.functionsFrame, text="Start Timer", command=self.startTime)
         self.newStartButton.grid(row=0, column=0)
+        self.outputDatabase()
+
+
+    def outputDatabase(self):
+        print("\n\n")
+        print(self.time)
+        print(self.endTime)
+        print(self.timeTag)
+
+
+        mycursor.execute("INSERT INTO punchclock(startTime, stopTime, tag, date) VALUES (%s, %s, %s, %s)",
+                         (self.time, self.endTime, self.timeTag, datetime.now()))
+        db.commit()
+
 
     def home(self):
         self.functionsFrame.destroy()
@@ -246,4 +286,3 @@ class MainScreen():
 if __name__ == "__main__":
     MainScreen(root)
     root.mainloop()
-
